@@ -14,7 +14,7 @@ RUN cargo build --release
 FROM debian:buster-slim
 
   # Install necessary dependencies
-RUN apt-get update && apt-get install -y libpq5 ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libpq5 ca-certificates protobuf-compiler libprotobuf-dev && rm -rf /var/lib/apt/lists/*
 
   # Copy the build artifact from the builder stage
 COPY --from=builder /usr/src/graph-node/target/release/graph-node /usr/local/bin/graph-node
