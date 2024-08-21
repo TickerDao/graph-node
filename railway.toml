@@ -1,6 +1,6 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "docker-compose.yml"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "docker-compose up"
