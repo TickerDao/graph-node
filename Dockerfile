@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:bullseye
+FROM rust:bullseye AS builder
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -14,14 +14,6 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Install IPFS
-RUN wget https://dist.ipfs.tech/kubo/v0.18.1/kubo_v0.18.1_linux-amd64.tar.gz && \
-    tar -xvzf kubo_v0.18.1_linux-amd64.tar.gz && \
-    cd kubo && \
-    bash install.sh && \
-    cd .. && \
-    rm -rf kubo_v0.18.1_linux-amd64.tar.gz kubo \
-
 # Set the working directory in the container
 WORKDIR /usr/src/graph-node
 
@@ -31,12 +23,23 @@ COPY . .
 # Build the project
 RUN cargo build --release
 
+# Runtime stage
+FROM debian:bullseye-slim
+
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     libpq5 \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
+# Install IPFS
+RUN wget https://dist.ipfs.tech/kubo/v0.18.1/kubo_v0.18.1_linux-amd64.tar.gz && \
+    tar -xvzf kubo_v0.18.1_linux-amd64.tar.gz && \
+    cd kubo && \
+    bash install.sh && \
+    cd .. && \
+    rm -rf kubo_v0.18.1_linux-amd64.tar.gz kubo
 
 # Copy the build artifact from the builder stage
 COPY --from=builder /usr/src/graph-node/target/release/graph-node /usr/local/bin/graph-node
