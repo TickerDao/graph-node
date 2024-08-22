@@ -5,6 +5,9 @@ FROM rust:latest
 RUN apt-get update && apt-get install -y \
     clang \
     libpq-dev \
+    ca-certificates \
+    protobuf-compiler \
+    libprotobuf-dev \
     libssl-dev \
     pkg-config \
     postgresql \
