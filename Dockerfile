@@ -31,15 +31,8 @@ RUN apt-get update && apt-get install -y \
     libpq5 \
     ca-certificates \
     wget \
-    locales \
     netcat \
-    && rm -rf /var/lib/apt/lists/* \
-    && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
-    && locale-gen \
-    && update-locale LANG=en_US.UTF-8 LC_ALL=C
-
-ENV LANG en_US.UTF-8
-ENV LC_ALL C
+    && rm -rf /var/lib/apt/lists/*
 
 # Install IPFS
 RUN wget https://dist.ipfs.tech/kubo/v0.18.1/kubo_v0.18.1_linux-amd64.tar.gz && \
