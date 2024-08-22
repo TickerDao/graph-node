@@ -48,12 +48,12 @@ ENV RUST_LOG=info
 EXPOSE 8000 8001 8030 5001
 
 # Create a startup script
-RUN echo '#!/bin/bash
-set -e
-echo "Starting IPFS..."
-ipfs init
-ipfs daemon --offline &
-echo "Starting Graph Node..."
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Starting IPFS..."\n\
+ipfs init\n\
+ipfs daemon --offline &\n\
+echo "Starting Graph Node..."\n\
 graph-node \
     --postgres-url "$POSTGRES_URL" \
     --ethereum-rpc "$ETHEREUM_RPC_URL" \
