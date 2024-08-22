@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:latest AS builder
+FROM rust:bullseye
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -11,7 +11,16 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     pkg-config \
     postgresql \
+    wget \
     && rm -rf /var/lib/apt/lists/*
+
+# Install IPFS
+RUN wget https://dist.ipfs.tech/kubo/v0.18.1/kubo_v0.18.1_linux-amd64.tar.gz && \
+    tar -xvzf kubo_v0.18.1_linux-amd64.tar.gz && \
+    cd kubo && \
+    bash install.sh && \
+    cd .. && \
+    rm -rf kubo_v0.18.1_linux-amd64.tar.gz kubo \
 
 # Set the working directory in the container
 WORKDIR /usr/src/graph-node
@@ -22,35 +31,33 @@ COPY . .
 # Build the project
 RUN cargo build --release
 
-# Runtime stage
-FROM debian:buster-slim
-
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     libpq5 \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+
 
 # Copy the build artifact from the builder stage
-COPY --from=builder /usr/src/graph-node /usr/src/graph-node
+COPY --from=builder /usr/src/graph-node/target/release/graph-node /usr/local/bin/graph-node
 
 # Set environment variables
 ENV RUST_LOG=info
 
 # Expose necessary ports
-EXPOSE 8000 8001 8030
+EXPOSE 8000 8001 8030 5001
 
 # Create a startup script
-RUN echo '#!/bin/bash\n\
-set -e\n\
-echo "Environment variables:"\n\
-env | grep -E "POSTGRES_URL|ETHEREUM_RPC_URL|RUST_LOG"\n\
-echo "Starting Graph Node..."\n\
-cd /usr/src/graph-node && \
-cargo run -p graph-node --release -- \
+RUN echo '#!/bin/bash
+set -e
+echo "Starting IPFS..."
+ipfs init
+ipfs daemon --offline &
+echo "Starting Graph Node..."
+graph-node \
     --postgres-url "$POSTGRES_URL" \
     --ethereum-rpc "$ETHEREUM_RPC_URL" \
-    --ipfs "https://ipfs.network.thegraph.com"\n' > /usr/local/bin/start.sh && \
+    --ipfs "localhost:5001"\n' > /usr/local/bin/start.sh && \
     chmod +x /usr/local/bin/start.sh
 
 # Start the Graph Node using the startup script
