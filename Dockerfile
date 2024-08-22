@@ -1,5 +1,5 @@
-# Use the official Rust image as a parent image
-FROM rust:latest
+# Build stage
+FROM rust:latest AS builder
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -16,23 +16,42 @@ RUN apt-get update && apt-get install -y \
 # Set the working directory in the container
 WORKDIR /usr/src/graph-node
 
-  # Copy the current directory contents into the container
+# Copy the current directory contents into the container
 COPY . .
 
-  # Build the project
+# Build the project
 RUN cargo build --release
 
-  # Use a smaller base image for the final image
+# Runtime stage
 FROM debian:buster-slim
 
-  # Set environment variables
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libpq5 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the build artifact from the builder stage
+COPY --from=builder /usr/src/graph-node /usr/src/graph-node
+
+# Set environment variables
 ENV RUST_LOG=info
 
-  # Expose necessary ports
+# Expose necessary ports
 EXPOSE 8000 8001 8030
 
-  # Run graph-node when the container launches
-CMD ["cargo", "run", "-p", "graph-node", "--release", "--", \
-     "--postgres-url", "${POSTGRES_URL}", \
-     "--ethereum-rpc", "${ETHEREUM_RPC_URL}", \
-     "--ipfs", "https://ipfs.network.thegraph.com"]
+# Create a startup script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Environment variables:"\n\
+env | grep -E "POSTGRES_URL|ETHEREUM_RPC_URL|RUST_LOG"\n\
+echo "Starting Graph Node..."\n\
+cd /usr/src/graph-node && \
+cargo run -p graph-node --release -- \
+    --postgres-url "$POSTGRES_URL" \
+    --ethereum-rpc "$ETHEREUM_RPC_URL" \
+    --ipfs "https://ipfs.network.thegraph.com"\n' > /usr/local/bin/start.sh && \
+    chmod +x /usr/local/bin/start.sh
+
+# Start the Graph Node using the startup script
+CMD ["/usr/local/bin/start.sh"]
