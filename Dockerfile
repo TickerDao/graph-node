@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     wget \
     locales \
+    netcat \
     && rm -rf /var/lib/apt/lists/* \
     && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
     && locale-gen \
@@ -60,14 +61,42 @@ EXPOSE 8000 8001 8030 5001
 # Create a startup script
 RUN echo '#!/bin/bash\n\
 set -e\n\
-echo "Starting IPFS..."\n\
-ipfs init\n\
-ipfs daemon --offline &\n\
+\n\
+echo "Initializing IPFS..."\n\
+if [ ! -f /root/.ipfs/config ]; then\n\
+    ipfs init\n\
+fi\n\
+\n\
+echo "Starting IPFS daemon..."\n\
+ipfs daemon &\n\
+IPFS_PID=$!\n\
+\n\
+# Wait for IPFS to start\n\
+echo "Waiting for IPFS to start..."\n\
+for i in {1..30}; do\n\
+    if nc -z localhost 5001; then\n\
+        echo "IPFS is up!"\n\
+        break\n\
+    fi\n\
+    if [ $i -eq 30 ]; then\n\
+        echo "Timed out waiting for IPFS to start"\n\
+        exit 1\n\
+    fi\n\
+    sleep 1\n\
+done\n\
+\n\
+# Test IPFS connection\n\
+echo "Testing IPFS connection..."\n\
+ipfs id\n\
+\n\
 echo "Starting Graph Node..."\n\
 graph-node \
     --postgres-url "$POSTGRES_URL" \
     --ethereum-rpc "$ETHEREUM_RPC_URL" \
-    --ipfs "localhost:5001"\n' > /usr/local/bin/start.sh && \
+    --ipfs "localhost:5001"\n\
+\n\
+# If graph-node exits, kill IPFS daemon\n\
+kill $IPFS_PID\n' > /usr/local/bin/start.sh && \
     chmod +x /usr/local/bin/start.sh
 
 # Start the Graph Node using the startup script
