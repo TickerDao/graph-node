@@ -57,13 +57,13 @@ RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
 echo "Checking database locale..."\n\
-DB_LOCALE=$(psql -tAc "SHOW lc_collate;" $POSTGRES_URL)\n\
+DB_LOCALE=$(psql -tAc "SELECT datcollate FROM pg_database WHERE datname = current_database();" $POSTGRES_URL)\n\
+echo "Current database locale: $DB_LOCALE"\n\
 if [ "$DB_LOCALE" != "C" ]; then\n\
-    echo "Database locale is not C. Attempting to modify..."\n\
-    psql $POSTGRES_URL << EOF\n\
-        UPDATE pg_database SET datcollate="C", datctype="C" WHERE datname="railway";\n\
-EOF\n\
-    echo "Database locale updated. Please restart the database for changes to take effect."\n\
+    echo "Database locale is not C. Please note that this may cause issues with Graph Node."\n\
+    echo "To fix this, you may need to create a new database with the correct locale:"\n\
+    echo "CREATE DATABASE graph_node WITH TEMPLATE template0 LC_COLLATE '"'"'C'"'"' LC_CTYPE '"'"'C'"'"';"\n\
+    echo "Then, update your POSTGRES_URL to use the new database."\n\
 fi\n\
 \n\
 echo "Initializing IPFS..."\n\
