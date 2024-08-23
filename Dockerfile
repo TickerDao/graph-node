@@ -47,6 +47,8 @@ COPY --from=builder /usr/src/graph-node/target/release/graph-node /usr/local/bin
 
 # Set environment variables
 ENV RUST_LOG=info
+ENV PGDATA="/var/lib/postgresql/data"
+ENV POSTGRES_INITDB_ARGS="-E UTF8 --locale=C"
 
 # Expose necessary ports
 EXPOSE 8000 8001 8030 5001
