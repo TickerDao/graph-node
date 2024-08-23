@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     wget \
     netcat \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Install IPFS
@@ -47,8 +48,6 @@ COPY --from=builder /usr/src/graph-node/target/release/graph-node /usr/local/bin
 
 # Set environment variables
 ENV RUST_LOG=info
-ENV PGDATA="/var/lib/postgresql/data"
-ENV POSTGRES_INITDB_ARGS="-E UTF8 --locale=C"
 
 # Expose necessary ports
 EXPOSE 8000 8001 8030 5001
@@ -56,6 +55,16 @@ EXPOSE 8000 8001 8030 5001
 # Create a startup script
 RUN echo '#!/bin/bash\n\
 set -e\n\
+\n\
+echo "Checking database locale..."\n\
+DB_LOCALE=$(psql -tAc "SHOW lc_collate;" $POSTGRES_URL)\n\
+if [ "$DB_LOCALE" != "C" ]; then\n\
+    echo "Database locale is not C. Attempting to modify..."\n\
+    psql $POSTGRES_URL << EOF\n\
+        UPDATE pg_database SET datcollate="C", datctype="C" WHERE datname="railway";\n\
+EOF\n\
+    echo "Database locale updated. Please restart the database for changes to take effect."\n\
+fi\n\
 \n\
 echo "Initializing IPFS..."\n\
 if [ ! -f /root/.ipfs/config ]; then\n\
