@@ -1,9 +1,4 @@
-# Full build with debuginfo for graph-node
-#
-# The expectation if that the docker build uses the parent directory as PWD
-# by running something like the following
-#   docker build --target STAGE -f docker/Dockerfile .
-
+# Build stage
 FROM golang:bullseye as envsubst
 
 # v1.2.0
@@ -11,21 +6,32 @@ ARG ENVSUBST_COMMIT_SHA=16035fe3571ad42c7796bf554f978bb2df64231b
 # We ship `envsubst` with the final image to facilitate env. var. templating in
 # the configuration file.
 RUN go install github.com/a8m/envsubst/cmd/envsubst@$ENVSUBST_COMMIT_SHA \
-    && strip -g /go/bin/envsubst
+    && strip -g /go/bin/envsubst \
 
-FROM rust:bullseye as graph-node-build
+FROM rust:bullseye AS builder
 
 ARG COMMIT_SHA=unknown
-ARG REPO_NAME=unknown
-ARG BRANCH_NAME=unknown
-ARG TAG_NAME=unknown
+ARG REPO_NAME="datachain-graph"
+ARG BRANCH_NAME="alpha"
+ARG TAG_NAME="flight"
 
 ADD . /graph-node
 
-RUN apt-get update \
-    && apt-get install -y cmake protobuf-compiler && \
-    cd /graph-node && \
-    RUSTFLAGS="-g" cargo build --release --package graph-node \
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    clang \
+    cmake \
+    libpq-dev \
+    ca-certificates \
+    protobuf-compiler \
+    libprotobuf-dev \
+    libssl-dev \
+    pkg-config \
+    postgresql \
+    wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && cd /graph-node \
+    && RUSTFLAGS="-g" cargo build --release --package graph-node \
     && cp target/release/graph-node /usr/local/bin/graph-node \
     && cp target/release/graphman /usr/local/bin/graphman \
     # Reduce the size of the layer by removing unnecessary files.
@@ -51,14 +57,32 @@ RUN apt-get update \
 COPY docker/Dockerfile /Dockerfile
 COPY docker/bin/* /usr/local/bin/
 
-# The graph-node runtime image with only the executable
+# Runtime stage
 FROM debian:bullseye-slim as graph-node
-ENV RUST_LOG ""
-ENV GRAPH_LOG ""
-ENV EARLY_LOG_CHUNK_SIZE ""
-ENV ETHEREUM_RPC_PARALLEL_REQUESTS ""
-ENV ETHEREUM_BLOCK_CHUNK_SIZE ""
 
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libpq5 \
+    ca-certificates \
+    wget \
+    netcat \
+    postgresql \
+    postgresql-contrib \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install IPFS
+RUN wget https://dist.ipfs.tech/kubo/v0.18.1/kubo_v0.18.1_linux-amd64.tar.gz && \
+    tar -xvzf kubo_v0.18.1_linux-amd64.tar.gz && \
+    cd kubo && \
+    bash install.sh && \
+    cd .. && \
+    rm -rf kubo_v0.18.1_linux-amd64.tar.gz kubo
+
+# Copy the build artifact from the builder stage
+COPY --from=builder /usr/src/graph-node/target/release/graph-node /usr/local/bin/graph-node
+
+# Set environment variables
+ENV RUST_LOG="${RUST_BACKTRACE}"
 ENV postgres_host = "${POSTGRES_URL}"
 ENV postgres_user = "postgres"
 ENV postgres_pass = "${POSTGRES_PASSWORD}"
@@ -73,36 +97,18 @@ ENV ethereum = "${ETHEREUM_RPC_URL}"
 # The role the node should have, one of index-node, query-node, or
 # combined-node
 ENV node_role "combined-node"
-# The name of this node
-ENV node_id "default"
-# The ethereum network polling interval  (in milliseconds)
-ENV ethereum_polling_interval ""
 
-# The location of an optional configuration file for graph-node, as
-# described in ../docs/config.md
-# Using a configuration file is experimental, and the file format may
-# change in backwards-incompatible ways
-ENV GRAPH_NODE_CONFIG ""
+# Expose necessary ports
+EXPOSE 8000 8001 8020 8030 5001
 
-# Disable core dumps; this is useful for query nodes with large caches. Set
-# this to anything to disable coredumps (via 'ulimit -c 0')
-ENV disable_core_dumps ""
-
-# HTTP port
-EXPOSE 8000
-# WebSocket port
-EXPOSE 8001
-# JSON-RPC port
-EXPOSE 8020
-# Indexing status port
-EXPOSE 8030
-
-RUN apt-get update \
-    && apt-get install -y libpq-dev ca-certificates netcat
+# Create a startup script
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
 ADD docker/wait_for docker/start /usr/local/bin/
 COPY --from=graph-node-build /usr/local/bin/graph-node /usr/local/bin/graphman /usr/local/bin/
 COPY --from=graph-node-build /etc/image-info /etc/image-info
 COPY --from=envsubst /go/bin/envsubst /usr/local/bin/
 COPY docker/Dockerfile /Dockerfile
-CMD ["start"]
+
+CMD ["/usr/local/bin/start.sh"]
