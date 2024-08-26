@@ -1,4 +1,4 @@
-# Build stage
+# Build stage for envsubst
 FROM golang:bullseye as envsubst
 
 # v1.2.0
@@ -6,9 +6,10 @@ ARG ENVSUBST_COMMIT_SHA=16035fe3571ad42c7796bf554f978bb2df64231b
 # We ship `envsubst` with the final image to facilitate env. var. templating in
 # the configuration file.
 RUN go install github.com/a8m/envsubst/cmd/envsubst@$ENVSUBST_COMMIT_SHA \
-    && strip -g /go/bin/envsubst \
+    && strip -g /go/bin/envsubst
 
-FROM rust:bullseye AS builder
+# Build stage for graph-node
+FROM rust:bullseye AS graph-node-build
 
 ARG COMMIT_SHA=unknown
 ARG REPO_NAME="datachain-graph"
@@ -17,7 +18,7 @@ ARG TAG_NAME="flight"
 
 ADD . /graph-node
 
-# Install dependencies
+# Install dependencies and build graph-node
 RUN apt-get update && apt-get install -y \
     clang \
     cmake \
@@ -78,30 +79,21 @@ RUN wget https://dist.ipfs.tech/kubo/v0.18.1/kubo_v0.18.1_linux-amd64.tar.gz && 
     cd .. && \
     rm -rf kubo_v0.18.1_linux-amd64.tar.gz kubo
 
-# Copy the build artifact from the builder stage
-COPY --from=builder /usr/src/graph-node/target/release/graph-node /usr/local/bin/graph-node
-
 # Set environment variables
 ENV RUST_LOG="${RUST_BACKTRACE}"
-ENV postgres_host = "${POSTGRES_URL}"
-ENV postgres_user = "postgres"
-ENV postgres_pass = "${POSTGRES_PASSWORD}"
-ENV postgres_db = "graph-node"
-ENV postgres_args "sslmode=prefer"
-# The full URL to the IPFS node
-ENV ipfs = "${IPFS_ADDRESS}"
-# The etherum network(s) to connect to. Set this to a space-separated
-# list of the networks where each entry has the form NAME:URL
-ENV ethereum = "${ETHEREUM_RPC_URL}"
-
-# The role the node should have, one of index-node, query-node, or
-# combined-node
-ENV node_role "combined-node"
+ENV postgres_host="${POSTGRES_URL}"
+ENV postgres_user="postgres"
+ENV postgres_pass="${POSTGRES_PASSWORD}"
+ENV postgres_db="graph-node"
+ENV postgres_args="sslmode=prefer"
+ENV ipfs="${IPFS_ADDRESS}"
+ENV ethereum="${ETHEREUM_RPC_URL}"
+ENV node_role="combined-node"
 
 # Expose necessary ports
 EXPOSE 8000 8001 8020 8030 5001
 
-# Create a startup script
+# Copy necessary files and binaries
 COPY start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
