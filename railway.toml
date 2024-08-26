@@ -1,6 +1,6 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "/docker/Dockerfile"
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
@@ -9,5 +9,6 @@ restartPolicyMaxRetries = 10
 [env]
 RUST_LOG = "info"
 POSTGRES_URL = "${POSTGRES_URL}"
+POSTGRES_PASSWORD = "${POSTGRES_PASSWORD}"
 ETHEREUM_RPC_URL = "${ETHEREUM_RPC_URL}"
 IPFS_ADDRESS = "${IPFS_ADDRESS}"

@@ -59,16 +59,17 @@ ENV EARLY_LOG_CHUNK_SIZE ""
 ENV ETHEREUM_RPC_PARALLEL_REQUESTS ""
 ENV ETHEREUM_BLOCK_CHUNK_SIZE ""
 
-ENV postgres_host ""
-ENV postgres_user ""
-ENV postgres_pass ""
-ENV postgres_db ""
+ENV postgres_host = "${POSTGRES_URL}"
+ENV postgres_user = "postgres"
+ENV postgres_pass = "${POSTGRES_PASSWORD}"
+ENV postgres_db = "graph-node"
 ENV postgres_args "sslmode=prefer"
 # The full URL to the IPFS node
-ENV ipfs ""
+ENV ipfs = "${IPFS_ADDRESS}"
 # The etherum network(s) to connect to. Set this to a space-separated
 # list of the networks where each entry has the form NAME:URL
-ENV ethereum ""
+ENV ethereum = "${ETHEREUM_RPC_URL}"
+
 # The role the node should have, one of index-node, query-node, or
 # combined-node
 ENV node_role "combined-node"
