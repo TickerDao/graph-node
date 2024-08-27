@@ -61,7 +61,7 @@ COPY docker/bin/* /usr/local/bin/
 # Runtime stage
 FROM debian:bullseye-slim as graph-node
 
-# Install runtime dependencies
+# Install runtime dependencies including full PostgreSQL
 RUN apt-get update && apt-get install -y \
     libpq5 \
     ca-certificates \
@@ -69,7 +69,14 @@ RUN apt-get update && apt-get install -y \
     netcat \
     postgresql \
     postgresql-contrib \
-    && rm -rf /var/lib/apt/lists/*
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /var/lib/postgresql/data \
+    && chown -R postgres:postgres /var/lib/postgresql/data \
+    && chmod 700 /var/lib/postgresql/data
+
+# Ensure PostgreSQL binaries are in PATH
+ENV PATH="/usr/lib/postgresql/13/bin:${PATH}"
 
 # Install IPFS
 RUN wget https://dist.ipfs.tech/kubo/v0.18.1/kubo_v0.18.1_linux-amd64.tar.gz && \

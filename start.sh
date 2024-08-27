@@ -1,9 +1,33 @@
 #!/bin/bash
 set -e
 
-# Initialize and start PostgreSQL
-echo "Initializing PostgreSQL..."
+# Function for logging
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
 
+# Ensure PGDATA is set
+if [ -z "$PGDATA" ]; then
+    PGDATA="/var/lib/postgresql/data"
+    log "PGDATA was not set. Using default: $PGDATA"
+fi
+
+# Ensure the PGDATA directory exists
+if [ ! -d "$PGDATA" ]; then
+    log "Creating PGDATA directory: $PGDATA"
+    mkdir -p "$PGDATA"
+    chown postgres:postgres "$PGDATA"
+    chmod 700 "$PGDATA"
+fi
+
+# Check PostgreSQL installation
+if ! command -v psql &> /dev/null; then
+    log "ERROR: PostgreSQL is not installed or not in PATH"
+    log "PATH: $PATH"
+    log "Installed packages:"
+    dpkg -l | grep postgres
+    exit 1
+fi
 
 # Check if PostgreSQL is initialized
 PGDATA="${PGDATA:-/var/lib/postgresql/data}"
