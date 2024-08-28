@@ -76,7 +76,7 @@ RUN apt-get update && apt-get install -y \
     && chmod 700 /var/lib/postgresql/data
 
 # Ensure PostgreSQL binaries are in PATH
-ENV PATH="/usr/lib/postgresql/13/bin:${PATH}"
+ENV PATH="/usr/lib/postgresql/9.6/bin:${PATH}"
 
 # Install IPFS
 RUN wget https://dist.ipfs.tech/kubo/v0.18.1/kubo_v0.18.1_linux-amd64.tar.gz && \

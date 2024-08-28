@@ -5,6 +5,15 @@ set -e
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
+# Debug information
+log "initdb: $(locate initdb)"
+log "Current user: $(whoami)"
+log "Current directory: $(pwd)"
+log "PGDATA: $PGDATA"
+log "PATH: $PATH"
+log "PostgreSQL version: $(psql --version)"
+log "Listing PostgreSQL binaries:"
+ls -l /usr/lib/postgresql/13/bin
 
 # Ensure PGDATA is set
 if [ -z "$PGDATA" ]; then
