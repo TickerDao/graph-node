@@ -76,7 +76,7 @@ RUN apt-get update && apt-get install -y \
     && chmod 700 /var/lib/postgresql/data
 
 # Ensure PostgreSQL binaries are in PATH
-ENV PATH="/usr/lib/postgresql/9.6/bin:${PATH}"
+ENV PATH="/usr/lib/postgresql/13/bin:${PATH}"
 
 # Install IPFS
 RUN wget https://dist.ipfs.tech/kubo/v0.18.1/kubo_v0.18.1_linux-amd64.tar.gz && \
@@ -106,6 +106,7 @@ RUN chmod +x /usr/local/bin/start.sh
 
 ADD docker/wait_for docker/start /usr/local/bin/
 COPY --from=graph-node-build /usr/local/bin/graph-node /usr/local/bin/graphman /usr/local/bin/
+COPY --from=graph-node-build /usr/lib/postgresql/13/bin /usr/local/bin/postgresql /usr/local/bin/
 COPY --from=graph-node-build /etc/image-info /etc/image-info
 COPY --from=envsubst /go/bin/envsubst /usr/local/bin/
 COPY docker/Dockerfile /Dockerfile
