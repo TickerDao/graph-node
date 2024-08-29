@@ -38,25 +38,25 @@ if ! command -v psql &> /dev/null; then
     exit 1
 fi
 
-# Check if PostgreSQL is initialized
-PGDATA="${PGDATA:-/var/lib/postgresql/data}"
-if [ -z "$(ls -A "$PGDATA")" ]; then
-    echo "Initializing PostgreSQL..."
-    mkdir -p "$PGDATA"
-    chown -R postgres:postgres "$PGDATA"
-    chmod 700 "$PGDATA"
-    su - postgres -c "initdb -D /var/lib/postgresql/data -E UTF8 --locale=C"
-    su - postgres -c "pg_ctl -D /var/lib/postgresql/data -E UTF8 --locale=C -l logfile start"
-
-    su postgres -c "createdb graph-node -T template0 -E UTF8 --lc-collate='C' --lc-ctype='C'"
-    su postgres -c "psql -d graph-node -c 'CREATE EXTENSION pg_trgm;'"
-    su postgres -c "psql -d graph-node -c 'CREATE EXTENSION pg_stat_statements;'"
-    su postgres -c "psql -d graph-node -c 'CREATE EXTENSION btree_gist;'"
-    su postgres -c "psql -d graph-node -c 'CREATE EXTENSION postgres_fdw;'"
-else
-    echo "PostgreSQL data directory already initialized, starting PostgreSQL..."
-    su postgres -c "pg_ctl -D $PGDATA -l logfile start"
-fi
+## Check if PostgreSQL is initialized
+#PGDATA="${PGDATA:-/var/lib/postgresql/data}"
+#if [ -z "$(ls -A "$PGDATA")" ]; then
+#    echo "Initializing PostgreSQL..."
+#    mkdir -p "$PGDATA"
+#    chown -R postgres:postgres "$PGDATA"
+#    chmod 700 "$PGDATA"
+#    su - postgres -c "initdb -D /var/lib/postgresql/data -E UTF8 --locale=C"
+#    su - postgres -c "pg_ctl -D /var/lib/postgresql/data -E UTF8 --locale=C -l logfile start"
+#
+#    su postgres -c "createdb graph-node -T template0 -E UTF8 --lc-collate='C' --lc-ctype='C'"
+#    su postgres -c "psql -d graph-node -c 'CREATE EXTENSION pg_trgm;'"
+#    su postgres -c "psql -d graph-node -c 'CREATE EXTENSION pg_stat_statements;'"
+#    su postgres -c "psql -d graph-node -c 'CREATE EXTENSION btree_gist;'"
+#    su postgres -c "psql -d graph-node -c 'CREATE EXTENSION postgres_fdw;'"
+#else
+#    echo "PostgreSQL data directory already initialized, starting PostgreSQL..."
+#    su postgres -c "pg_ctl -D $PGDATA -l logfile start"
+#fi
 
 
 echo "Checking database locale..."
