@@ -97,9 +97,10 @@ done
 echo "Testing IPFS connection..."
 ipfs id
 
+#--postgres-url "postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/graph-node" \
 echo "Starting Graph Node..."
 exec graph-node \
---postgres-url "postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/graph-node" \
+    --postgres-url "${POSTGRES_URL}" \
     --ethereum-rpc "${ETHEREUM_RPC_URL}" \
     --ipfs "localhost:5001"
 
