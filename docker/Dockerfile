@@ -106,7 +106,6 @@ RUN chmod +x /usr/local/bin/start.sh
 
 ADD docker/wait_for docker/start /usr/local/bin/
 COPY --from=graph-node-build /usr/local/bin/graph-node /usr/local/bin/graphman /usr/local/bin/
-COPY --from=graph-node-build /usr/lib/postgresql/13/bin /usr/local/bin/postgresql /usr/local/bin/
 COPY --from=graph-node-build /etc/image-info /etc/image-info
 COPY --from=envsubst /go/bin/envsubst /usr/local/bin/
 COPY docker/Dockerfile /Dockerfile
