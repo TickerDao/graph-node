@@ -98,16 +98,18 @@ ENV ethereum="${ETHEREUM_RPC_URL}"
 ENV node_role="combined-node"
 
 # Expose necessary ports
-EXPOSE 8000 8001 8020 8030 5001
+EXPOSE 8000 8001 8020 8030 8040 5001
 
 # Copy necessary files and binaries
-COPY start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
+COPY docker/start /usr/local/bin/start
+RUN chmod +x /usr/local/bin/start
 
 ADD docker/wait_for docker/start /usr/local/bin/
 COPY --from=graph-node-build /usr/local/bin/graph-node /usr/local/bin/graphman /usr/local/bin/
 COPY --from=graph-node-build /etc/image-info /etc/image-info
 COPY --from=envsubst /go/bin/envsubst /usr/local/bin/
 COPY docker/Dockerfile /Dockerfile
+COPY docker/setup /usr/local/bin/setup
+RUN chmod +x /usr/local/bin/setup
 
-CMD ["/usr/local/bin/start.sh"]
+CMD ["/usr/local/bin/start"]

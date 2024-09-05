@@ -26,7 +26,7 @@ docker run -it \
   -e postgres_pass=oh-hello \
   -e postgres_db=graph-node \
   -e ipfs=host.docker.internal:5001 \
-  -e ethereum=mainnet:http://localhost:8545/ \
+  -e ethereum=mainnet:https://datachain.rpc.caldera.xyz/http \
   graphprotocol/graph-node:latest
 ```
 
