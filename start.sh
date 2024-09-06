@@ -97,12 +97,14 @@ done
 echo "Testing IPFS connection..."
 ipfs id
 
+unset DISABLE_BLOCK_INGESTOR
+
 #--postgres-url "postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/graph-node" \
 echo "Starting Graph Node..."
 exec graph-node \
     --postgres-url "${POSTGRES_URL}" \
     --ethereum-rpc "${ETHEREUM_RPC_URL}" \
-    --ipfs "localhost:5001"
+    --ipfs "https://api.thegraph.com/ipfs/"
 
 # If graph-node exits, kill IPFS daemon
 kill $IPFS_PID

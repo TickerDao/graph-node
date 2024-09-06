@@ -101,15 +101,13 @@ ENV node_role="combined-node"
 EXPOSE 8000 8001 8020 8030 8040 5001
 
 # Copy necessary files and binaries
-COPY docker/start /usr/local/bin/start
-RUN chmod +x /usr/local/bin/start
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
 ADD docker/wait_for docker/start /usr/local/bin/
 COPY --from=graph-node-build /usr/local/bin/graph-node /usr/local/bin/graphman /usr/local/bin/
 COPY --from=graph-node-build /etc/image-info /etc/image-info
 COPY --from=envsubst /go/bin/envsubst /usr/local/bin/
 COPY docker/Dockerfile /Dockerfile
-COPY docker/setup.sh /usr/local/bin/setup.sh
-RUN chmod +x /usr/local/bin/setup.sh
 
-CMD ["/usr/local/bin/start"]
+CMD ["/usr/local/bin/start.sh"]
