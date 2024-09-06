@@ -1,0 +1,47 @@
+[store]
+[store.primary]
+connection = "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}"
+pool_size = 10
+
+[chains]
+ingestor = "combined_node"
+
+[chains.mainnet]
+shard = "primary"
+provider = [
+  { label = "mainnet", url = "${ETHEREUM_RPC_URL}", features = ["archive"] }
+]
+
+[deployment]
+[[deployment.rule]]
+indexers = ["combined_node"]
+
+[general]
+query = "combined_node"
+
+[logging]
+level = "info"
+format = "json"
+
+[metrics]
+enabled = true
+port = 8040
+
+[server]
+host = "0.0.0.0"
+port = 8000
+query_only = false
+
+[admin]
+enabled = true
+host = "0.0.0.0"
+port = 8020
+
+[subscription]
+polling_interval = 1000
+
+[ethereum]
+geth_eth_call_errors = "deterministic_error"
+
+[store.locking]
+strategy = "ethereum"

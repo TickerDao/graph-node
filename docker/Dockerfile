@@ -109,5 +109,6 @@ COPY --from=graph-node-build /usr/local/bin/graph-node /usr/local/bin/graphman /
 COPY --from=graph-node-build /etc/image-info /etc/image-info
 COPY --from=envsubst /go/bin/envsubst /usr/local/bin/
 COPY docker/Dockerfile /Dockerfile
+COPY docker/config.toml /app/config/config.toml
 
 CMD ["/usr/local/bin/start.sh"]

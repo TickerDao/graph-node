@@ -3,14 +3,36 @@ builder = "DOCKERFILE"
 dockerfilePath = "/docker/Dockerfile"
 
 [deploy]
+startCommand = "graph-node --config config/config.toml --ipfs ${IPFS_ADDRESS} --ethereum-rpc mainnet:${ETHEREUM_RPC_URL}"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
+[[services]]
+internal_port = 8000
+protocol = "tcp"
+
+[[services]]
+internal_port = 8001
+protocol = "tcp"
+
+[[services]]
+internal_port = 8020
+protocol = "tcp"
+
+[[services]]
+internal_port = 8030
+protocol = "tcp"
+
+[[services]]
+internal_port = 8040
+protocol = "tcp"
+
 [env]
 RUST_LOG = "info"
-POSTGRES_URL = "${POSTGRES_URL}"
+POSTGRES_USER = "${POSTGRES_USER}"
 POSTGRES_PASSWORD = "${POSTGRES_PASSWORD}"
+POSTGRES_HOST = "${POSTGRES_HOST}"
+POSTGRES_DB = "${POSTGRES_DB}"
 ETHEREUM_RPC_URL = "${ETHEREUM_RPC_URL}"
 IPFS_ADDRESS = "${IPFS_ADDRESS}"
-PGDATA = "/var/lib/postgresql/data"
-POSTGRES_INITDB_ARGS = "-E UTF8 --locale=C"
+GRAPH_NODE_CONFIG = "/app/config/config.toml"
